@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Galactic Dominion RTS</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><polygon points='50,5 95,85 5,85' fill='%2300f0ff'/><circle cx='50' cy='55' r='18' fill='%23ff0055'/></svg>" />
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <!-- Canvas 3D de Three.js -->
+  <div id="game-container">
+    <canvas id="rts-canvas"></canvas>
+    <div id="selection-box"></div>
+  </div>
+
+  <!-- HUD Táctico Sci-Fi -->
+  <div id="rts-ui">
+    <!-- Barra Superior: Recursos y Estatus -->
+    <header id="top-bar">
+      <div class="logo-zone">
+        <span class="faction-crest">◈</span>
+        <span class="game-title">GALACTIC DOMINION</span>
+        <span class="sub-status" id="tactical-status">ONLINE // SECTOR 07-PRIME</span>
+      </div>
+
+      <div class="resources-display">
+        <div class="resource-pill" id="res-minerals" title="Cristales Nova (Material de construcción)">
+          <span class="res-icon">💎</span>
+          <div class="res-meta">
+            <span class="res-label">NOVA-CRISTALES</span>
+            <span class="res-value" id="val-minerals">600 / 2,500</span>
+          </div>
+        </div>
+
+        <div class="resource-pill" id="res-gas" title="Gas de Plasma (Tecnología avanzada y blindaje)">
+          <span class="res-icon">🧪</span>
+          <div class="res-meta">
+            <span class="res-label">GAS DE PLASMA</span>
+            <span class="res-value" id="val-gas">150 / 1,500</span>
+          </div>
+        </div>
+
+        <div class="resource-pill" id="res-energy" title="Energía de Fusión (Red de energía: Consumida / Producida)">
+          <span class="res-icon">⚡</span>
+          <div class="res-meta">
+            <span class="res-label">RED ELÉCTRICA</span>
+            <span class="res-value" id="val-energy">25 / 120 ⚡</span>
+          </div>
+          <span class="res-indicator status-optimal" id="indicator-energy">ESTABLE</span>
+        </div>
+
+        <div class="resource-pill" id="res-supply" title="Suministros y Límite de Población">
+          <span class="res-icon">👥</span>
+          <div class="res-meta">
+            <span class="res-label">POBLACIÓN</span>
+            <span class="res-value" id="val-supply">8 / 24</span>
+          </div>
+        </div>
+
+        <div class="resource-pill system-telemetry" id="res-fps" title="Rendimiento del motor">
+          <span class="res-icon">🛰️</span>
+          <div class="res-meta">
+            <span class="res-label">FPS / TICK</span>
+            <span class="res-value" id="val-fps">60 FPS</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Centro de Notificaciones Tácticas -->
+    <div id="notification-feed"></div>
+
+    <!-- Barra Inferior Clásica RTS -->
+    <footer id="bottom-console">
+      <!-- Radar Táctico / Minimapa -->
+      <div id="minimap-panel" class="console-box">
+        <div class="box-header">
+          <span class="box-title">RADAR TÁCTICO</span>
+          <span class="radar-ping-light"></span>
+        </div>
+        <div class="minimap-wrapper">
+          <canvas id="minimap-canvas" width="160" height="160"></canvas>
+          <div class="minimap-reticle"></div>
+        </div>
+      </div>
+
+      <!-- Ficha de Selección / Telemetría -->
+      <div id="selection-panel" class="console-box">
+        <div class="box-header">
+          <span class="box-title" id="selection-title">TELEMETRÍA DE LA UNIDAD</span>
+          <span class="selection-class" id="selection-tier">ESTRUCTURA NIVEL 1</span>
+        </div>
+        <div class="selection-content">
+          <div class="selection-portrait" id="selection-avatar">
+            <div class="hologram-effect"></div>
+            <span class="portrait-glyph">🏛️</span>
+          </div>
+          <div class="selection-stats">
+            <h3 id="target-name">CENTRO DE MANDO SOLARIS</h3>
+            <p id="target-desc">Base de operaciones principal. Proporciona control de mando, radar y producción de unidades básicas.</p>
+            <div class="stat-bar-group">
+              <div class="stat-row">
+                <span class="stat-label">BLINDAJE</span>
+                <div class="progress-track">
+                  <div class="progress-fill hp-fill" id="stat-hp-bar" style="width: 100%;"></div>
+                </div>
+                <span class="stat-num" id="stat-hp-val">2500 / 2500</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">ESCUDO</span>
+                <div class="progress-track">
+                  <div class="progress-fill shield-fill" id="stat-shield-bar" style="width: 100%;"></div>
+                </div>
+                <span class="stat-num" id="stat-shield-val">1000 / 1000</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel de Órdenes / Botonera de Mando -->
+      <div id="command-card" class="console-box">
+        <div class="box-header">
+          <span class="box-title">PANEL DE ÓRDENES</span>
+          <span class="hotkeys-badge">ACCESOS: Q-W-E-R / A-S-D-F</span>
+        </div>
+        <div class="orders-grid" id="orders-grid">
+          <!-- Botones inyectados dinámicamente por CommandCard.js -->
+        </div>
+      </div>
+    </footer>
+
+    <!-- Controles en Pantalla / Instrucciones Rápidas flotantes -->
+    <div id="controls-help" class="controls-overlay">
+      <div class="help-header">
+        <span>🎮 MANDOS TÁCTICOS</span>
+        <button id="btn-toggle-help" class="btn-mini">✕</button>
+      </div>
+      <ul>
+        <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / <kbd>Bordes</kbd>: Mover cámara</li>
+        <li><kbd>Click Izquierdo</kbd>: Seleccionar unidad o estructura</li>
+        <li><kbd>Arrastrar Izquierdo</kbd>: Selección múltiple por rectángulo</li>
+        <li><kbd>Shift</kbd> + <kbd>Click</kbd>: Añadir o quitar de la selección</li>
+        <li><kbd>Click Derecho</kbd>: Movimiento / Navegación A*</li>
+        <li><kbd>S</kbd>: Detenerse | <kbd>H</kbd>: Mantener posición | <kbd>P</kbd>: Patrullar</li>
+        <li><kbd>Rueda Ratón</kbd>: Zoom In / Out | <kbd>Espacio</kbd>: Base</li>
+        <li><kbd>G</kbd>: Cuadrícula | <kbd>F3</kbd>: Telemetría / FPS</li>
+      </ul>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
